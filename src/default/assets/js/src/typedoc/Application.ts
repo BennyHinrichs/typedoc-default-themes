@@ -1,18 +1,16 @@
 /// <reference types='backbone' />
-/// <reference types='underscore' />
-/// <reference types='jquery' />
 
 declare namespace typedoc
 {
     export interface Events extends Backbone.Events {
         new (): Events
     }
-    export var Events: Backbone.Events & { new (): Backbone.Events };
+    export let Events: Backbone.Events & { new (): Backbone.Events };
 }
 
 namespace typedoc
 {
-    export var $html = $('html');
+    export const html = document.documentElement;
 
 
     /**
@@ -42,27 +40,12 @@ namespace typedoc
     /**
      * List of all known services.
      */
-    var services:IService[] = [];
+    const services:IService[] = [];
 
     /**
      * List of all known components.
      */
-    var components:IComponent[] = [];
-
-    /**
-     * jQuery instance of the document.
-     */
-    export var $document = $(document);
-
-    /**
-     * jQuery instance of the window.
-     */
-    export var $window = $(window);
-
-    /**
-     * jQuery instance of the window.
-     */
-    export var $body = $('body');
+    const components:IComponent[] = [];
 
 
     /**
@@ -100,8 +83,10 @@ namespace typedoc
      * Copy Backbone.Events to TypeScript class.
      */
     if (typeof Backbone != 'undefined') {
-        typedoc.Events = function () {} as any;
-        _.extend(typedoc.Events.prototype, Backbone.Events);
+        typedoc.Events = (<any>function () {});
+        for (const property in Backbone.Events) {
+            if (Backbone.Events.hasOwnProperty(property)) typedoc.Events.prototype[property] = (<any>Backbone.Events)[property];
+        }
     }
 
 
@@ -117,7 +102,7 @@ namespace typedoc
             super();
 
             this.createServices();
-            this.createComponents($body);
+            this.createComponents(document.body);
         }
 
 
@@ -125,32 +110,32 @@ namespace typedoc
          * Create all services.
          */
         private createServices() {
-            _(services).forEach((c) => {
+            services.forEach((c) => {
                 c.instance = new c.constructor();
-                (typedoc as any)[c.name] = c.instance;
+                (<any>typedoc)[c.name] = c.instance;
             });
         }
 
 
         /**
-         * Create all components beneath the given jQuery element.
+         * Create all components beneath the given element.
          */
-        public createComponents($context:JQuery, namespace:string = 'default'):Backbone.View<any>[] {
-            var result: any[] = [];
-            _(components).forEach((c) => {
+        public createComponents(context:HTMLElement, namespace:string = 'default'):Backbone.View<any>[] {
+            const result: any[] = [];
+            components.forEach(c => {
                 if (c.namespace != namespace && c.namespace != '*') {
                     return;
                 }
-
-                $context.find(c.selector).each((m:number, el: Element) => {
-                    var $el = $(el), instance;
-                    if (instance = $el.data('component')) {
-                        if (_(result).indexOf(instance) == -1) {
+                
+                context.querySelectorAll(c.selector).forEach((el:Element) => {
+                    let instance;
+                    if (instance = (<HTMLElement>el).dataset.component) {
+                        if (result.indexOf(instance) == -1) {
                             result.push(instance);
                         }
                     } else {
-                        instance = new c.constructor({el:el});
-                        $el.data('component', instance);
+                        instance = new c.constructor({el});
+                        (<HTMLElement>el).dataset.component = instance;
                         result.push(instance);
                     }
                 });

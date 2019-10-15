@@ -1,9 +1,9 @@
 namespace typedoc {
     function getVendorInfo(tuples: {[key: string]: string}) {
-        for (var name in tuples) {
+        for (const name in tuples) {
             if (!tuples.hasOwnProperty(name))
                 continue;
-            if (typeof ((document.body.style as any)[name]) !== 'undefined') {
+            if (typeof ((<any>document.body.style)[name]) !== 'undefined') {
                 return { name: name, endEvent: tuples[name] };
             }
         }
@@ -11,7 +11,7 @@ namespace typedoc {
     }
 
 
-    export var transition = getVendorInfo({
+    export const transition = getVendorInfo({
         'transition': 'transitionend',
         'OTransition': 'oTransitionEnd',
         'msTransition': 'msTransitionEnd',
@@ -20,33 +20,34 @@ namespace typedoc {
     });
 
 
-    export function noTransition($el: JQuery, callback: () => void) {
-        $el.addClass('no-transition');
+    export function noTransition(el: Element, callback: () => void) {
+        el.classList.add('no-transition');
         callback();
-        $el.offset();
-        $el.removeClass('no-transition');
+        el.classList.remove('no-transition');
     }
 
 
-    export function animateHeight($el: JQuery, callback:Function, success?:Function) {
-        let from = $el.height() || 0;
+    export function animateHeight(el: HTMLElement, callback:Function, success?:Function) {
+        let from = el.clientHeight || 0;
         let to = from;
-        noTransition($el, function () {
+        noTransition(el, function () {
             callback();
 
-            $el.css('height', '');
-            to = $el.height() || 0;
-            if (from != to && transition) $el.css('height', from);
+            el.style.height = '';
+            to = el.clientHeight || 0;
+            if (from != to && transition) el.style.height = `${from}`;
         });
 
         if (from != to && transition) {
-            $el.css('height', to);
-            $el.on(transition.endEvent, function () {
-                noTransition($el, function () {
-                    $el.off(transition!.endEvent).css('height', '');
+            el.style.height = `${to}`;
+            const handleEndEvent = () => {
+                noTransition(el, function () {
+                    el.removeEventListener(transition!.endEvent, handleEndEvent);
+                    el.style.height = '';
                     if (success) success();
                 });
-            });
+            }
+            el.addEventListener(transition.endEvent, handleEndEvent);
         } else {
             if (success) success();
         }

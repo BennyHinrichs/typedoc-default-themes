@@ -1,4 +1,3 @@
-/// <reference types='jquery' />
 /// <reference types='backbone' />
 /// <reference path='../Application.ts' />
 /// <reference path='../utils/pointer.ts' />
@@ -40,7 +39,7 @@ namespace typedoc
         protected setValue(value:T) {
             if (this.value == value) return;
 
-            var oldValue = this.value;
+            const oldValue = this.value;
             this.value = value;
             window.localStorage[this.key] = this.toLocalStorage(value);
 
@@ -51,20 +50,20 @@ namespace typedoc
 
     class FilterItemCheckbox extends FilterItem<boolean>
     {
-        private $checkbox!:JQuery;
+        private checkbox!:HTMLInputElement;
 
 
         protected initialize() {
-            this.$checkbox = $('#tsd-filter-' + this.key);
-            this.$checkbox.on('change', () => {
-                this.setValue(this.$checkbox.prop('checked'));
+            this.checkbox = <HTMLInputElement>document.querySelector('#tsd-filter-' + this.key);
+            this.checkbox.addEventListener('change', () => {
+                this.setValue(this.checkbox.checked);
             });
         }
 
 
         protected handleValueChange(oldValue:boolean, newValue:boolean) {
-            this.$checkbox.prop('checked', this.value);
-            $html.toggleClass('toggle-' + this.key, this.value != this.defaultValue);
+            this.checkbox.checked =  this.value;
+            html.classList.toggle('toggle-' + this.key, this.value != this.defaultValue);
         }
 
 
@@ -81,38 +80,40 @@ namespace typedoc
 
     class FilterItemSelect extends FilterItem<string>
     {
-        private $select!:JQuery;
+        private select!:HTMLSelectElement;
 
 
         protected initialize() {
-            $html.addClass('toggle-' + this.key + this.value);
+            html.classList.add('toggle-' + this.key + this.value);
 
-            this.$select = $('#tsd-filter-' + this.key);
-            this.$select.on(pointerDown + ' mouseover', () => {
-                this.$select.addClass('active');
-            }).on('mouseleave', () => {
-                this.$select.removeClass('active');
-            }).on(pointerUp, 'li', (e) => {
-                this.$select.removeClass('active');
-                this.setValue(($(e.target).attr('data-value') || '').toString());
+            this.select = <HTMLSelectElement>document.querySelector('#tsd-filter-' + this.key);
+            this.select.addEventListener(pointerDown + ' mouseover', () => {
+                this.select.classList.add('active');
+            })
+            this.select.addEventListener('mouseleave', () => {
+                this.select.classList.remove('active');
+            })
+            this.select.addEventListener(pointerUp, (e) => {
+                const li = (<HTMLElement>e.target).closest('li');
+                if (!li) return;
+                this.select.classList.remove('active');
+                this.setValue((<HTMLElement>e.target).dataset.value || '');
             });
 
-            $document.on(pointerDown, (e) => {
-                var $path = $(e.target).parents().addBack();
-                if ($path.is(this.$select)) return;
-
-                this.$select.removeClass('active');
+            document.addEventListener(pointerDown, (e) => {
+                if ((<HTMLElement>e.target).parentElement === this.select) return;
+                this.select.classList.remove('active');
             });
         }
 
 
         protected handleValueChange(oldValue:string, newValue:string) {
-            this.$select.find('li.selected').removeClass('selected');
-            this.$select.find('.tsd-select-label').text(
-                this.$select.find('li[data-value="' + newValue + '"]').addClass('selected').text());
-
-            $html.removeClass('toggle-' + oldValue);
-            $html.addClass('toggle-' + newValue);
+            const newLi = (this.select.querySelector('li[data-value="' + newValue + '"]')!);
+            (this.select.querySelector('li.selected')!).classList.remove('selected');
+            newLi.classList.add('selected');
+            (this.select.querySelector('.tsd-select-label')!).textContent = newLi.textContent;
+            html.classList.remove('toggle-' + oldValue);
+            html.classList.add('toggle-' + newValue);
         }
 
         protected fromLocalStorage(value: string): string {
@@ -159,6 +160,6 @@ namespace typedoc
     if (Filter.isSupported()) {
         registerComponent(Filter, '#tsd-filter');
     } else {
-        $html.addClass('no-filter');
+        html.classList.add('no-filter');
     }
 }

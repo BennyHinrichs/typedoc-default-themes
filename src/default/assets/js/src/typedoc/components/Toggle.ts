@@ -1,5 +1,4 @@
 /// <reference types='backbone' />
-/// <reference types='jquery' />
 /// <reference path='../utils/pointer.ts' />
 /// <reference path='../Application.ts' />
 
@@ -16,62 +15,47 @@ namespace typedoc
         constructor(options: Backbone.ViewOptions<any>) {
             super(options);
 
-            this.className = this.$el.attr('data-toggle') || '';
-            this.$el.on(pointerUp, (e) => this.onPointerUp(e));
-            this.$el.on('click', (e) => e.preventDefault());
-            $document.on(pointerDown, (e) => this.onDocumentPointerDown(e));
-            $document.on(pointerUp, (e) => this.onDocumentPointerUp(e));
+            this.className = this.el.dataset.toggle || '';
+            this.el.addEventListener(pointerUp, (e: Event) => this.onPointerUp(e));
+            this.el.addEventListener('click', (e: Event) => e.preventDefault());
+            document.addEventListener(pointerDown, e => this.onDocumentPointerDown(e));
+            document.addEventListener(pointerUp, e => this.onDocumentPointerUp(e));
         }
 
         setActive(value: boolean) {
             if (this.active == value) return;
             this.active = value;
 
-            $html.toggleClass('has-' + this.className, value);
-            this.$el.toggleClass('active', value);
+            html.classList[value ? 'add' : 'remove']('has-' + this.className);
+            this.el.classList[value ? 'add' : 'remove']('active');
 
-            var transition = (this.active ? 'to-has-' : 'from-has-') + this.className;
-            $html.addClass(transition);
-            setTimeout(() => $html.removeClass(transition), 500);
+            const transition = (this.active ? 'to-has-' : 'from-has-') + this.className;
+            html.classList.add(transition);
+            setTimeout(() => html.classList.remove(transition), 500);
         }
 
-        onPointerUp(event: JQuery.TriggeredEvent) {
+        onPointerUp(e: Event) {
             if (hasPointerMoved) return;
             this.setActive(true);
-            event.preventDefault();
+            e.preventDefault();
         }
 
-        onDocumentPointerDown(e: JQuery.TriggeredEvent) {
+        onDocumentPointerDown(e: Event) {
             if (this.active) {
-                var $path = $(e.target)
-                    .parents()
-                    .addBack();
-                if ($path.hasClass('col-menu')) {
-                    return;
-                }
-
-                if ($path.hasClass('tsd-filter-group')) {
-                    return;
-                }
-
+                if ((<Element>e.target).closest('.col-menu, .tsd-filter-group')) return;
                 this.setActive(false);
             }
         }
 
-        onDocumentPointerUp(e: JQuery.TriggeredEvent) {
+        onDocumentPointerUp(e: Event) {
             if (hasPointerMoved) return;
             if (this.active) {
-                var $path = $(e.target)
-                    .parents()
-                    .addBack();
-                if ($path.hasClass('col-menu')) {
-                    var $link = $path.filter('a');
-                    if ($link.length) {
-                        var href = window.location.href;
-                        if (href.indexOf('#') != -1) {
-                            href = href.substr(0, href.indexOf('#'));
-                        }
-                        if ($link.prop('href').substr(0, href.length) == href) {
+                const colMenu = (<Element>e.target).closest('col-menu');
+                if (colMenu) {
+                    const link = colMenu.querySelector('a');
+                    if (link) {
+                        const href = window.location.origin + window.location.pathname;
+                        if (link.href.substr(0, href.length) == href) {
                             setTimeout(() => this.setActive(false), 250);
                         }
                     }

@@ -8,5 +8,5 @@
 
 namespace typedoc
 {
-    export var app: Application = new Application();
+    export const app: Application = new Application();
 }

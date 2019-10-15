@@ -1,5 +1,4 @@
 /// <reference types='backbone' />
-/// <reference types='underscore' />
 /// <reference path='../Application.ts' />
 /// <reference path='../services/Viewport.ts' />
 
@@ -11,14 +10,14 @@ namespace typedoc
     interface IAnchorInfo
     {
         /**
-         * jQuery instance of the anchor tag.
+         * The anchor tag.
          */
-        $anchor?: JQuery;
+        anchor?: Element;
 
         /**
-         * jQuery instance of the link in the navigation representing this anchor.
+         * The link in the navigation representing this anchor.
          */
-        $link?: JQuery<Node>;
+        link?: Element;
 
         /**
          * The vertical offset of the anchor on the page.
@@ -68,23 +67,23 @@ namespace typedoc
                 position: 0
             }];
 
-            var base = window.location.href;
-            if (base.indexOf('#') != -1) {
+            let base = window.location.href;
+            if (base.indexOf('#') > -1) {
                 base = base.substr(0, base.indexOf('#'));
             }
 
-            this.$el.find('a').each((_index, el: Element) => {
-                var href = (el as HTMLAnchorElement).href;
+            this.el.querySelectorAll('a').forEach((el: Element) => {
+                const href = (<HTMLAnchorElement>el).href;
                 if (href.indexOf('#') == -1) return;
                 if (href.substr(0, base.length) != base) return;
 
-                var hash = href.substr(href.indexOf('#') + 1);
-                var $anchor = $('a.tsd-anchor[name=' + hash + ']');
-                if ($anchor.length == 0) return;
+                const hash = href.substr(href.indexOf('#') + 1);
+                const anchor = document.querySelector('a.tsd-anchor[name=' + hash + ']');
+                if (!anchor) return;
 
                 this.anchors.push({
-                    $link:    $(el.parentNode!),
-                    $anchor:  $anchor,
+                    link: el.parentElement!,
+                    anchor,
                     position: 0
                 });
             });
@@ -97,10 +96,10 @@ namespace typedoc
          * Triggered after the viewport was resized.
          */
         private onResize() {
-            var anchor: IAnchorInfo;
-            for (var index = 1, count = this.anchors.length; index < count; index++) {
-                anchor = this.anchors[index];
-                anchor.position = anchor.$anchor!.offset()!.top;
+            let anchorInfo: IAnchorInfo;
+            for (let index = 1; index < this.anchors.length; index++) {
+                anchorInfo = this.anchors[index];
+                anchorInfo.position = anchorInfo.anchor ? anchorInfo.anchor.getBoundingClientRect().top + html.scrollTop : 0;
             }
 
             this.anchors.sort((a, b) => {
@@ -117,9 +116,9 @@ namespace typedoc
          * @param scrollTop  The current vertical scroll position.
          */
         private onScroll(scrollTop:number) {
-            var anchors  = this.anchors;
-            var index    = this.index;
-            var count    = anchors.length - 1;
+            const anchors = this.anchors;
+            let index = this.index;
+            const count = anchors.length - 1;
 
             scrollTop += 5;
             while (index > 0 && anchors[index].position > scrollTop) {
@@ -131,9 +130,9 @@ namespace typedoc
             }
 
             if (this.index != index) {
-                if (this.index > 0) this.anchors[this.index].$link!.removeClass('focus');
+                if (this.index > 0) this.anchors[this.index].link!.classList.remove('focus');
                 this.index = index;
-                if (this.index > 0) this.anchors[this.index].$link!.addClass('focus');
+                if (this.index > 0) this.anchors[this.index].link!.classList.add('focus');
             }
         }
     }
