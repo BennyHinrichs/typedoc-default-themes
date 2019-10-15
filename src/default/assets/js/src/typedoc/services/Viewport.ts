@@ -1,4 +1,3 @@
-/// <reference types='underscore' />
 /// <reference path='../Application.ts' />
 /// <reference path='../utils/throttle.ts' />
 
@@ -39,6 +38,11 @@ namespace typedoc
          */
         showToolbar:boolean = true;
 
+        /**
+         * The toolbar (contains the search input).
+         */
+        secondaryNav:HTMLElement;
+
 
         /**
          * Create new Viewport instance.
@@ -47,6 +51,7 @@ namespace typedoc
             super();
 
             this.toolbar = <HTMLDivElement>document.querySelector('.tsd-page-toolbar');
+            this.secondaryNav = <HTMLElement>document.querySelector('.tsd-navigation.secondary');
 
             window.addEventListener('scroll', throttle(() => this.onScroll(), 10))
             window.addEventListener('resize', throttle(() => this.onResize(), 10));
@@ -92,6 +97,7 @@ namespace typedoc
             this.showToolbar = this.lastY >= this.scrollTop || this.scrollTop === 0;
             if (isShown !== this.showToolbar) {
                 this.toolbar.classList[this.showToolbar ? 'remove' : 'add']('tsd-page-toolbar--hide');
+                this.secondaryNav.classList[this.showToolbar ? 'add' : 'remove']('tsd-navigation--displace');
             }
             this.lastY = this.scrollTop;
         }
